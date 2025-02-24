@@ -1,0 +1,654 @@
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/services/events.ts is as follows:
+--------------------------------------------------- */
+Current date: Friday, February 21, 2025, 07 PM CET
+
+import { Connection, PublicKey } from '@solana/web3.js';
+import { EventParser, Program, Event } from '@coral-xyz/anchor';
+import { CONFIG } from '../config';
+import { SolTrackProgram } from '@/types/program_types';
+
+
+export const setupEventListener = (
+    program: SolTrackProgram,
+    callback: (event: any) => void
+  ) =>  {
+  const parser = new EventParser(program.programId, program.coder);
+  
+  return program.provider.connection.onLogs(
+    program.programId,
+    ({ logs, err }) => {
+      if (err) return;
+      
+      // Convert generator to array first
+      const events = Array.from(parser.parseLogs(logs));
+      
+      // Type-safe iteration
+      events.forEach((event: Event) => {
+        callback(event);
+      });
+    },
+    'confirmed'
+  );
+};
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/services/transactions.ts is as follows:
+--------------------------------------------------- */
+Current date: Friday, February 21, 2025, 07 PM CET
+
+
+import { SolTrackProgram } from '../types/program_types'; // Correct path
+import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { derivePackageAddress } from '../utils/pda';
+
+export interface PackageData {
+  package_id: string;
+  status: string;
+  location: { lat: number; lng: number };
+  created_at: number;
+  encrypted_recipient_data: number[];
+}
+
+export const fetchPackage = async (
+  program: SolTrackProgram,
+  pda: PublicKey
+): Promise<PackageData> => {
+  try {
+  const account = await (program.account as any).Package.fetch(pda);
+  return {
+    package_id: account.package_id,
+    status: typeof account.status === 'string' ? account.status : Object.keys(account.status)[0],
+    location: {
+      lat: account.current_location.latitude,
+      lng: account.current_location.longitude
+    },
+    created_at: account.created_at.toNumber(),
+    encrypted_recipient_data: Array.from(account.encrypted_recipient_data)
+  };
+
+  } catch (error) {
+
+  console.error("Error fetching package:", error);
+  throw error; // Re-throw to allow error handling in the UI
+
+  }
+};
+
+export const createPackage = async (
+  program: SolTrackProgram,
+  package_id: string,
+  courierPubkey: PublicKey,
+  encryptedData: Uint8Array,
+  location: { lat: number; lng: number }
+) => {
+  const pda = await derivePackageAddress(package_id, courierPubkey);
+    // Add null check for sender
+    if (!program.provider.publicKey) {
+      throw new Error("Wallet not connected");
+    }
+  return await program.methods.createPackage( package_id, Array.from(encryptedData), location.lat, location.lng)
+      .accounts({
+      Package: pda, 
+      courier: courierPubkey,
+      sender: program.provider.publicKey,
+      systemProgram: SystemProgram.programId
+    })
+    .rpc();
+};
+
+export const updatePackageStatus = async (
+  program: SolTrackProgram,
+  package_id: string,
+  courierPubkey: PublicKey,
+  new_status: any,
+  location: { lat: number; lng: number }
+) => {
+  const pda = await derivePackageAddress(package_id, courierPubkey);
+  return await program.methods
+    .updatePackageStatus(new_status, location.lat, location.lng)
+    .accounts({
+      Package: pda,
+      courier: courierPubkey,
+      systemProgram: SystemProgram.programId,
+    })
+    .rpc();
+};
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/utils/encryption.ts is as follows:
+--------------------------------------------------- */
+
+import nacl from 'tweetnacl';
+
+export const encryptData = (
+  data: string,
+  publicKey: Uint8Array
+): Uint8Array => {
+  const encodedData = new TextEncoder().encode(data);
+  return (nacl.box as any).seal(encodedData, publicKey);
+};
+
+export const decryptData = (
+  encryptedData: Uint8Array,
+  secretKey: Uint8Array
+): string => {
+  const keypair = nacl.box.keyPair.fromSecretKey(secretKey);
+  const decrypted = (nacl.box.open as any).sealed(encryptedData, keypair.publicKey, keypair.secretKey);
+  if (!decrypted) throw new Error('Decryption failed');
+  return new TextDecoder().decode(decrypted);
+};
+
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/utils/pda.ts is as follows:
+--------------------------------------------------- */
+import { PublicKey } from '@solana/web3.js';
+import { CONFIG } from '../config';
+
+export const derivePackageAddress = async (
+  packageId: string,
+  courierPubkey: PublicKey
+): Promise<PublicKey> => {
+  const [pda] = await PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("package"),
+      Buffer.from(packageId),
+      courierPubkey.toBuffer()
+    ],
+    CONFIG.PROGRAM_ID
+  );
+  return pda;
+};
+
+export const generateTrackingLink = (pda: PublicKey): string => 
+  `${window.location.origin}/track/${pda.toBase58()}`;
+
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/App.tsx is as follows:
+--------------------------------------------------- */ 
+import { useMemo, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { CONFIG } from './config';
+import CreatePackageForm from './components/CreatePackageForm';
+import TrackingPage from './components/TrackingPage';
+import CourierDashboard from './components/CourierDashboard';
+import './App';
+
+function App() {
+  const network = WalletAdapterNetwork.Devnet;
+  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+
+  return (
+    <ConnectionProvider endpoint={CONFIG.RPC_URL}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <div className="App">
+            <h1>SolTrack Package Tracker</h1>
+            <Router>
+              <Routes>
+                <Route path="/" element={<CreatePackageForm />} />
+                <Route path="/track/:pda" element={<TrackingPage />} />
+                <Route path="/courier" element={<CourierDashboard />} />
+              </Routes>
+            </Router>
+          </div>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  );
+}
+
+export default App;
+
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/components/CreatePackageForm.tsx is as follows:
+--------------------------------------------------- */ 
+import { useWallet } from '@solana/wallet-adapter-react';
+import { encryptData } from '../utils/encryption';
+import { createPackage } from '../services/transactions';
+import { useState } from 'react';
+
+export default function CreatePackageForm() {
+  const { publicKey, sendTransaction } = useWallet();
+  const [formData, setFormData] = useState({/* ... */});
+
+  const handleSubmit = async () => {
+    const encrypted = encryptData(
+      JSON.stringify(formData.recipient),
+      publicKey.toBytes()
+    );
+    
+    await createPackage(
+      program,
+      formData.packageId,
+      publicKey,
+      encrypted,
+      formData.location
+    );
+  };
+
+  return (
+    <Form>
+      {/* Form inputs */}
+      <Button onClick={handleSubmit}>Create Package</Button>
+    </Form>
+  );
+}
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/idl/index.ts is as follows:
+--------------------------------------------------- */ 
+import idl from './package_tracker.json';
+import { PackageTrackerIDL } from './types';
+
+export const PackageTrackerIDL = idl as PackageTrackerIDL;
+export type PackageTracker = typeof PackageTrackerIDL;
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/idl/types.d.ts is as follows:
+--------------------------------------------------- */ 
+declare module 'package_tracker.json' {
+    import { Idl } from '@coral-xyz/anchor';
+    const value: Idl;
+    export default value;
+  }
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/types/pack.ts is as follows:
+--------------------------------------------------- */ 
+import { Idl } from '@coral-xyz/anchor';
+
+
+export type PackageTrackerIDL = Idl & {
+  instructions: Array<{
+    name: string;
+    accounts: Array<{
+      name: string;
+      isMut: boolean;
+      isSigner: boolean;
+      pda?: {
+        seeds: Array<{
+          kind: 'const' | 'arg' | 'account';
+          value?: number[];
+          path?: string;
+        }>;
+      };
+    }>;
+    args: Array<{
+      name: string;
+      type: string | { defined: string };
+    }>;
+  }>;
+};
+
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/types/program_types.ts is as follows:
+--------------------------------------------------- */ 
+
+import { Program } from '@coral-xyz/anchor';
+import { PackageTracker } from '../idl'; // Your IDL type
+
+// Simplified type that references your actual IDL
+export type SolTrackProgram = Program<PackageTracker>;
+
+/* ------------------------------------------------
+My package_tracker/client/frontend/src/types/package_tracker.ts is as follows:
+--------------------------------------------------- */ 
+
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/package_tracker.json`.
+ */
+export type PackageTracker = 
+{
+  "address": "6MvygZ6LsuRpgLFBb4Qmrdnh19aD1UsyceGXynwU9hp9",
+  "metadata": {
+    "name": "package_tracker",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "create_package",
+      "discriminator": [
+        26,
+        217,
+        117,
+        112,
+        128,
+        181,
+        142,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "sender",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "courier",
+          "signer": true
+        },
+        {
+          "name": "package",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  99,
+                  107,
+                  97,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "package_id"
+              },
+              {
+                "kind": "account",
+                "path": "courier"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "package_id",
+          "type": "string"
+        },
+        {
+          "name": "encrypted_recipient_data",
+          "type": "bytes"
+        },
+        {
+          "name": "latitude",
+          "type": "f64"
+        },
+        {
+          "name": "longitude",
+          "type": "f64"
+        }
+      ]
+    },
+    {
+      "name": "update_package_status",
+      "discriminator": [
+        73,
+        215,
+        171,
+        223,
+        129,
+        27,
+        138,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "courier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "package",
+          "writable": true
+        },
+        {
+          "name": "fee_collector",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_status",
+          "type": {
+            "defined": {
+              "name": "PackageStatus"
+            }
+          }
+        },
+        {
+          "name": "latitude",
+          "type": "f64"
+        },
+        {
+          "name": "longitude",
+          "type": "f64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Package",
+      "discriminator": [
+        203,
+        12,
+        246,
+        255,
+        184,
+        43,
+        206,
+        39
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "PackageCreated",
+      "discriminator": [
+        120,
+        199,
+        211,
+        93,
+        235,
+        33,
+        84,
+        100
+      ]
+    },
+    {
+      "name": "StatusUpdated",
+      "discriminator": [
+        19,
+        149,
+        70,
+        150,
+        145,
+        120,
+        241,
+        11
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "UnauthorizedCourier",
+      "msg": "Unauthorized access"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidStatusTransition",
+      "msg": "Invalid status transition"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidGeoPoint",
+      "msg": "Geolocation out of bounds"
+    }
+  ],
+  "types": [
+    {
+      "name": "GeoPoint",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "latitude",
+            "type": "f64"
+          },
+          {
+            "name": "longitude",
+            "type": "f64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Package",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "package_id",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "PackageStatus"
+              }
+            }
+          },
+          {
+            "name": "sender",
+            "type": "pubkey"
+          },
+          {
+            "name": "courier_pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "current_location",
+            "type": {
+              "defined": {
+                "name": "GeoPoint"
+              }
+            }
+          },
+          {
+            "name": "encrypted_recipient_data",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PackageCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "package_id",
+            "type": "string"
+          },
+          {
+            "name": "courier",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PackageStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Created"
+          },
+          {
+            "name": "Dispatched"
+          },
+          {
+            "name": "InTransit"
+          },
+          {
+            "name": "OutForDelivery"
+          },
+          {
+            "name": "Delivered"
+          },
+          {
+            "name": "AttemptedDelivery"
+          },
+          {
+            "name": "Canceled"
+          },
+          {
+            "name": "HeldAtCustoms"
+          },
+          {
+            "name": "Delayed"
+          },
+          {
+            "name": "Lost"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StatusUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "package_id",
+            "type": "string"
+          },
+          {
+            "name": "new_status",
+            "type": {
+              "defined": {
+                "name": "PackageStatus"
+              }
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "latitude",
+            "type": "f64"
+          },
+          {
+            "name": "longitude",
+            "type": "f64"
+          }
+        ]
+      }
+    }
+  ]
+}

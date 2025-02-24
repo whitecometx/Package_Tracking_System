@@ -1,0 +1,351 @@
+{
+  "address": "6MvygZ6LsuRpgLFBb4Qmrdnh19aD1UsyceGXynwU9hp9",
+  "metadata": {
+    "name": "package_tracker",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "create_package",
+      "discriminator": [
+        26,
+        217,
+        117,
+        112,
+        128,
+        181,
+        142,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "sender",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "courier",
+          "signer": true
+        },
+        {
+          "name": "package",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  99,
+                  107,
+                  97,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "package_id"
+              },
+              {
+                "kind": "account",
+                "path": "courier"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "package_id",
+          "type": "string"
+        },
+        {
+          "name": "encrypted_recipient_data",
+          "type": "bytes"
+        },
+        {
+          "name": "latitude",
+          "type": "f64"
+        },
+        {
+          "name": "longitude",
+          "type": "f64"
+        }
+      ]
+    },
+    {
+      "name": "update_package_status",
+      "discriminator": [
+        73,
+        215,
+        171,
+        223,
+        129,
+        27,
+        138,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "courier",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "package",
+          "writable": true
+        },
+        {
+          "name": "fee_collector",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_status",
+          "type": {
+            "defined": {
+              "name": "PackageStatus"
+            }
+          }
+        },
+        {
+          "name": "latitude",
+          "type": "f64"
+        },
+        {
+          "name": "longitude",
+          "type": "f64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Package",
+      "discriminator": [
+        203,
+        12,
+        246,
+        255,
+        184,
+        43,
+        206,
+        39
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "PackageCreated",
+      "discriminator": [
+        120,
+        199,
+        211,
+        93,
+        235,
+        33,
+        84,
+        100
+      ]
+    },
+    {
+      "name": "StatusUpdated",
+      "discriminator": [
+        19,
+        149,
+        70,
+        150,
+        145,
+        120,
+        241,
+        11
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "UnauthorizedCourier",
+      "msg": "Unauthorized access"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidStatusTransition",
+      "msg": "Invalid status transition"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidGeoPoint",
+      "msg": "Geolocation out of bounds"
+    }
+  ],
+  "types": [
+    {
+      "name": "GeoPoint",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "latitude",
+            "type": "f64"
+          },
+          {
+            "name": "longitude",
+            "type": "f64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Package",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "package_id",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "PackageStatus"
+              }
+            }
+          },
+          {
+            "name": "sender",
+            "type": "pubkey"
+          },
+          {
+            "name": "courier_pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "current_location",
+            "type": {
+              "defined": {
+                "name": "GeoPoint"
+              }
+            }
+          },
+          {
+            "name": "encrypted_recipient_data",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PackageCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "package_id",
+            "type": "string"
+          },
+          {
+            "name": "courier",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PackageStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Created"
+          },
+          {
+            "name": "Dispatched"
+          },
+          {
+            "name": "InTransit"
+          },
+          {
+            "name": "OutForDelivery"
+          },
+          {
+            "name": "Delivered"
+          },
+          {
+            "name": "AttemptedDelivery"
+          },
+          {
+            "name": "Canceled"
+          },
+          {
+            "name": "HeldAtCustoms"
+          },
+          {
+            "name": "Delayed"
+          },
+          {
+            "name": "Lost"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StatusUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "package_id",
+            "type": "string"
+          },
+          {
+            "name": "new_status",
+            "type": {
+              "defined": {
+                "name": "PackageStatus"
+              }
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "latitude",
+            "type": "f64"
+          },
+          {
+            "name": "longitude",
+            "type": "f64"
+          }
+        ]
+      }
+    }
+  ]
+}

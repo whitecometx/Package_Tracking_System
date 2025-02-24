@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{Transfer, transfer};
 use crate::state::*;
-use crate::state::events;
 use crate::contexts::*;
 use anchor_lang::solana_program::clock::Clock;
 use crate::SolTrackError;
@@ -23,11 +22,11 @@ pub struct UpdateStatus<'info> {
 
 impl<'info> UpdateStatus<'info> {
     pub fn update_package_status(&mut self, new_status: PackageStatus, latitude: f64, longitude: f64) -> Result<()> {
+    
         require!(
             self.package.is_valid_transition(&new_status),
             SolTrackError::InvalidStatusTransition
         );
-    
         // Validate geolocation
         require!(
             (-90.0..=90.0).contains(&latitude) && (-180.0..=180.0).contains(&longitude),
@@ -42,6 +41,7 @@ impl<'info> UpdateStatus<'info> {
         package.updated_at = Clock::get()?.unix_timestamp;
     
         // Charge fee (0.01 SOL)
+        
         let fee = 10_000_000; // 0.01 SOL in lamports /* */
         let from= self.courier.to_account_info();
         let to= self.fee_collector.to_account_info();

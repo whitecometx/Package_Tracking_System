@@ -12,7 +12,7 @@ pub use crate::errors::*;
 declare_id!("6MvygZ6LsuRpgLFBb4Qmrdnh19aD1UsyceGXynwU9hp9");
 
 #[program]
-pub mod package_tracker {
+    pub mod package_tracker {
     use crate::update_status::UpdateStatus;
 
     use super::*;

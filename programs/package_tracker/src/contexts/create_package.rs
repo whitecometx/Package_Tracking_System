@@ -1,8 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::errors::SolTrackError;
 use crate::state::*;
-use crate::state::events;
-use crate::contexts::*;
 use anchor_lang::solana_program::clock::Clock;
 
 #[derive(Accounts)]
@@ -10,9 +8,9 @@ use anchor_lang::solana_program::clock::Clock;
 pub struct CreatePackage<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
-    // Logistics provider's wallet
+    /// CHECK: Logistics provider's wallet
     #[account()]
-    pub courier: Signer<'info>,
+    pub courier: UncheckedAccount<'info>,
     
     #[account(
         init,
@@ -25,7 +23,7 @@ pub struct CreatePackage<'info> {
         ],
         bump
     )]
-    pub package: Account<'info, Package>,
+    pub package: Box<Account<'info, Package>>,
     pub system_program: Program<'info, System>,
 }
 
@@ -46,7 +44,7 @@ impl<'info> CreatePackage<'info> {
             courier_pubkey: self.courier.key(),
             created_at : clock.unix_timestamp,
             updated_at : clock.unix_timestamp,
-            current_location : GeoPoint::default(),
+            current_location : GeoPoint { latitude, longitude },
             encrypted_recipient_data, 
         });
 

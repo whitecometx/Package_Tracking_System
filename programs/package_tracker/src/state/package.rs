@@ -106,5 +106,5 @@ impl Package {
         8 +   // created_at (i64)
         8 +   // updated_at (i64)
         16 +  // GeoPoint (2x f64)
-        500; // encrypted_recipient_data (Vec<u8>)
+        4 + 200; // encrypted_recipient_data (Vec<u8>)
 }

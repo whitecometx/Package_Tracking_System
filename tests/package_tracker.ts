@@ -3,7 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import { PackageTracker } from "../target/types/package_tracker";
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
 import {getMinimumBalanceForRentExemptMint} from "@solana/spl-token";
-
+//import { chai } from "chai";
 const { assert } = require('chai');
 
 describe("package_tracker", () => {
@@ -21,37 +21,42 @@ describe("package_tracker", () => {
   let packagePDA;
 
   it("airdrop", async () => {
-    let lamports = await getMinimumBalanceForRentExemptMint(program.provider.connection);
-    let tx = new anchor.web3.Transaction();
-    tx.instructions = [
-      //const tx = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: provider.publicKey,
-        toPubkey: sender.publicKey,
-        lamports: 0.5 * LAMPORTS_PER_SOL,
-      }),
-      SystemProgram.transfer({
-        fromPubkey: provider.publicKey,
-        toPubkey: courier.publicKey,
-        lamports: 0.5 * LAMPORTS_PER_SOL,
-      }),
-    ]
-      console.log({
-        sender: sender.publicKey.toString(), 
-        courier: courier.publicKey.toString(),
+
+    const connection = provider.connection;
+    const airdropAmount = anchor.web3.LAMPORTS_PER_SOL * 10;
+    
+    const confirmAirdrop = async (pubkey: anchor.web3.PublicKey) => {
+      const tx = await connection.requestAirdrop(pubkey, airdropAmount);
+      const latestBlockhash = await connection.getLatestBlockhash();
+      await connection.confirmTransaction({
+        signature: tx,
+        ...latestBlockhash
       });
-    });
+    };
+
+    await Promise.all([
+      confirmAirdrop(sender.publicKey),
+      confirmAirdrop(courier.publicKey),
+    ]);
+    const courierBalance = await provider.connection.getBalance(courier.publicKey);
+    const senderBalance = await provider.connection.getBalance(courier.publicKey);
+    console.log("Sender balance:", senderBalance);
+    console.log("Courier balance:", courierBalance);
+  });
+
 
   it('Creates a package successfully', async () => {
-    const [packagePDA] = await anchor.web3.PublicKey.findProgramAddressSync(
+    const [packagePDA] = await PublicKey.findProgramAddressSync(
       [
         Buffer.from("package"),
-        Buffer.from(packageId),
+        Buffer.from(packageId, 'utf8'),
         courier.publicKey.toBuffer()
       ],
       program.programId
     );
-
+    console.log({
+      packagePDA: packagePDA.toString()
+    })
     const encryptedData = Buffer.from("ENCRYPTED_RECIPIENT_DATA");
 
     await program.methods.createPackage(
@@ -78,9 +83,11 @@ describe("package_tracker", () => {
     assert.equal(packageAccount.packageId, packageId);
     assert.isTrue(packageAccount.sender.equals(sender.publicKey));
     assert.isTrue(packageAccount.courierPubkey.equals(courier.publicKey));
-    assert.equal(packageAccount.status.created, true);
+    assert.isTrue(packageAccount.status.hasOwnProperty('created'));
     assert.equal(packageAccount.currentLocation.latitude, 40.7128);
     assert.equal(packageAccount.currentLocation.longitude, -74.0060);
+    console.log("Package Status:", packageAccount.status);
+
     
   });
 
@@ -108,7 +115,17 @@ describe("package_tracker", () => {
 
   it('Updates package status successfully', async () => {
     const initialCourierBalance = await provider.connection.getBalance(courier.publicKey);
-    
+    const [packagePDA] = await PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("package"),
+        Buffer.from(packageId, 'utf8'),
+        courier.publicKey.toBuffer()
+      ],
+      program.programId
+    );
+    console.log({
+      packagePDA: packagePDA.toString()
+    })
     await program.methods.updatePackageStatus(
       { dispatched: {} }, // New status
       34.0522, // LA lat
@@ -118,24 +135,41 @@ describe("package_tracker", () => {
       courier: courier.publicKey,
       package: packagePDA,
       feeCollector: feeCollector.publicKey,
-      systemProgram: SystemProgram.programId
+      systemProgram: SystemProgram.programId,
     })
     .signers([courier])
     .rpc();
 
     // Verify status update
     const packageAccount = await program.account.package.fetch(packagePDA);
-    assert.equal(packageAccount.status.dispatched, true);
+    assert.isTrue(packageAccount.status.hasOwnProperty('dispatched'));
     assert.equal(packageAccount.currentLocation.latitude, 34.0522);
+    assert.equal(packageAccount.currentLocation.longitude, -118.2437);
     
     // Verify fee deduction
     const finalCourierBalance = await provider.connection.getBalance(courier.publicKey);
-    assert.isBelow(finalCourierBalance, initialCourierBalance - 10000000); // 0.01 SOL fee
+    const feeAmount = 10_000_000; // 0.01 SOL in lamports
+    const txFeeBuffer = 5_000; // Additional buffer for transaction fees
+    assert.isAtLeast(initialCourierBalance - finalCourierBalance, feeAmount,
+      "Courier balance should decrease by at least the fee amount"
+    );
+    console.log("Initial balance:", initialCourierBalance);
+    console.log("Final balance:", finalCourierBalance);
+    console.log("Current status of Package is: ", packageAccount.status);
+
   });
 
   it('Fails unauthorized status update', async () => {
     const fakeCourier = anchor.web3.Keypair.generate();
-
+    const [packagePDA] = await PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("package"),
+        Buffer.from(packageId),
+        courier.publicKey.toBuffer() // Use real courier's key
+      ],
+      program.programId
+    );
+  
     try {
       await program.methods.updatePackageStatus(
         { inTransit: {} },
@@ -158,6 +192,15 @@ describe("package_tracker", () => {
 
   it('Fails invalid status transition', async () => {
     try {
+      const [packagePDA] = await PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("package"),
+          Buffer.from(packageId),
+          courier.publicKey.toBuffer()
+        ],
+        program.programId
+      );
+    
       // Attempt invalid transition: Dispatched → Delivered
       await program.methods.updatePackageStatus(
         { delivered: {} },
@@ -180,6 +223,15 @@ describe("package_tracker", () => {
 
   it('Fails invalid geolocation', async () => {
     try {
+      const [packagePDA] = await PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("package"),
+          Buffer.from(packageId),
+          courier.publicKey.toBuffer() // Use real courier's key
+        ],
+        program.programId
+      );
+    
       await program.methods.updatePackageStatus(
         { inTransit: {} },
         100.0, // Invalid latitude

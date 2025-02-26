@@ -39,7 +39,7 @@ describe("package_tracker", () => {
       confirmAirdrop(courier.publicKey),
     ]);
     const courierBalance = await provider.connection.getBalance(courier.publicKey);
-    const senderBalance = await provider.connection.getBalance(courier.publicKey);
+    const senderBalance = await provider.connection.getBalance(sender.publicKey);
     console.log("Sender balance:", senderBalance);
     console.log("Courier balance:", courierBalance);
   });

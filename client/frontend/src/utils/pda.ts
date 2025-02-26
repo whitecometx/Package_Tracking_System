@@ -15,6 +15,5 @@ export const derivePackageAddress = async (
   );
   return pda;
 };
-
 export const generateTrackingLink = (pda: PublicKey): string => 
   `${window.location.origin}/track/${pda.toBase58()}`;

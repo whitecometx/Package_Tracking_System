@@ -99,12 +99,12 @@ impl Package {
 
     /// Calculates account storage requirements
     pub const MAX_SIZE: usize = 
-        50 +  // package_id (String)
-        32 +  // sender_pubkey
-        32 +  // courier_pubkey
-        1 +   // status (enum discriminant)
-        8 +   // created_at (i64)
-        8 +   // updated_at (i64)
-        16 +  // GeoPoint (2x f64)
-        4 + 200; // encrypted_recipient_data (Vec<u8>)
+    4 + 10 +   // package_id (String: 4-byte prefix + 10 chars)
+    1          // status (enum discriminant)
+    + 32       // sender
+    + 32       // courier_pubkey
+    + 8        // created_at (i64)
+    + 8        // updated_at (i64)
+    + 16       // GeoPoint (2x f64)
+    + 4 + 200; // encrypted_recipient_data (Vec<u8>)
 }

@@ -8,15 +8,29 @@ use crate::SolTrackError;
 #[derive(Accounts)]
 pub struct UpdateStatus<'info> {
     #[account(mut)]
-    pub courier: Signer<'info>,      // Must match package.courier_pubkey
+    pub courier: Signer<'info>,
+    /// CHECK: Admin provider's wallet
+    #[account(mut)]
+    pub admin: UncheckedAccount<'info>,
+    
+          // Must match package.courier_pubkey
     #[account(
         mut,
         constraint = package.courier_pubkey == courier.key() @ SolTrackError::UnauthorizedCourier
     )]
     pub package: Account<'info, Package>,
-    #[account(mut)]
-    /// CHECK: Protocol's fee collector address
-    pub fee_collector: UncheckedAccount<'info>,
+    #[account(
+        mut,
+        address = global_config.fee_collector @ SolTrackError::InvalidFeeCollector,
+    )]
+    pub fee_collector: SystemAccount<'info>,
+    #[account(
+        seeds = [b"config",
+                admin.key().as_ref()
+                ],
+        bump,
+    )]
+    pub global_config: Account<'info, GlobalConfig>,
     pub system_program: Program<'info, System>,
 }
 
@@ -40,17 +54,19 @@ impl<'info> UpdateStatus<'info> {
         package.current_location = GeoPoint { latitude, longitude };
         package.updated_at = Clock::get()?.unix_timestamp;
     
-        // Charge fee (0.01 SOL)
-        
-        let fee = 10_000_000; // 0.01 SOL in lamports /* */
-        let from= self.courier.to_account_info();
-        let to= self.fee_collector.to_account_info();
-        let cpi_account = Transfer {
-            from,
-            to
+        // Deduct creation fee from courier
+        let cpi_program = self.system_program.to_account_info();
+        let cpi_accounts = Transfer {
+            from: self.courier.to_account_info(),
+            to: self.fee_collector.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_account);
-        transfer(cpi_ctx, fee)?;
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+        let amount = self.global_config.update_fee;
+
+        transfer(cpi_ctx, amount)?;
+        
         require!(
             self.courier.key() == package.courier_pubkey,
             SolTrackError::UnauthorizedCourier

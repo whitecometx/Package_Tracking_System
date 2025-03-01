@@ -242,7 +242,7 @@ describe("package_tracker", () => {
     
     // Verify fee deduction
     const finalCourierBalance = await provider.connection.getBalance(courier.publicKey);
-    const updateFee = 5_000_000; // 0.01 SOL in lamports
+    const updateFee = 5_000_000; // 0.005 SOL in lamports
     assert.isAtLeast(initialCourierBalance - finalCourierBalance, updateFee - 5_000,// Allow small buffer
       "Courier balance should decrease by at least the fee amount"
     );

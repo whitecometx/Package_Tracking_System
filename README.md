@@ -1,4 +1,4 @@
-# Solana Package Tracker
+# SolTrack - Solana Package Tracker
 
 A decentralized package tracking system built on Solana using Anchor. This program allows users to create packages, update their delivery status, and enforce business logic for valid status transitions while handling fees and security.
 

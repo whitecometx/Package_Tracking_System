@@ -1,4 +1,3 @@
-```markdown
 # Solana Package Tracker
 
 A decentralized package tracking system built on Solana using Anchor. This program allows users to create packages, update their delivery status, and enforce business logic for valid status transitions while handling fees and security.
@@ -32,7 +31,6 @@ A decentralized package tracking system built on Solana using Anchor. This progr
 - Node.js 18+
 - Rust 1.72+
 
-```bash
 # Clone repository
 git clone https://github.com/yourusername/package-tracker.git
 cd package-tracker
@@ -46,12 +44,11 @@ anchor build
 
 # Start local validator
 anchor localnet
-```
 
 ## Usage
 
 ### Initialize Global Configuration
-```typescript
+
 const [globalConfigPDA] = await PublicKey.findProgramAddressSync(
   [Buffer.from("global_config")],
   program.programId
@@ -66,10 +63,10 @@ await program.methods.initializeConfig(
   globalConfig: globalConfigPDA,
   systemProgram: SystemProgram.programId,
 }).rpc();
-```
+
 
 ### Create a Package
-```typescript
+
 const [packagePDA] = await PublicKey.findProgramAddressSync(
   [
     Buffer.from("package"),
@@ -92,10 +89,10 @@ await program.methods.createPackage(
   globalConfig: globalConfigPDA,
   systemProgram: SystemProgram.programId,
 }).rpc();
-```
+
 
 ### Update Package Status
-```typescript
+
 await program.methods.updatePackageStatus(
   { dispatched: {} }, 
   34.0522, 
@@ -107,12 +104,11 @@ await program.methods.updatePackageStatus(
   globalConfig: globalConfigPDA,
   systemProgram: SystemProgram.programId,
 }).rpc();
-```
 
 ## Testing
-```bash
+
 anchor test --skip-local-validator
-```
+
 
 ### Test Cases
 1. Create wallet addresses and Airdrop 
@@ -141,7 +137,7 @@ anchor test --skip-local-validator
 │   └── lib.rs              # Program entry point
 /tests
 └── package_tracker.ts      # Comprehensive test suite
-```
+
 
 ## Contributors
 @whitecometx - Maintainer

@@ -16,5 +16,5 @@ pub enum PackageStatus {
 }
 
 impl Space for PackageStatus {
-    const INIT_SPACE: usize = 1 ; // Assuming you use 1 byte to represent the enum
+    const INIT_SPACE: usize = 1 ; // Assuming to use 1 byte to represent the enum
 }

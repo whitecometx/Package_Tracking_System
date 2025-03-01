@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{Transfer, transfer};
 use crate::state::*;
-use crate::contexts::*;
 use anchor_lang::solana_program::clock::Clock;
 use crate::SolTrackError;
 
@@ -13,7 +12,7 @@ pub struct UpdateStatus<'info> {
     #[account(mut)]
     pub admin: UncheckedAccount<'info>,
     
-          // Must match package.courier_pubkey
+    // Must match package.courier_pubkey
     #[account(
         mut,
         constraint = package.courier_pubkey == courier.key() @ SolTrackError::UnauthorizedCourier
@@ -55,7 +54,6 @@ impl<'info> UpdateStatus<'info> {
         package.updated_at = Clock::get()?.unix_timestamp;
     
         // Deduct creation fee from courier
-        let cpi_program = self.system_program.to_account_info();
         let cpi_accounts = Transfer {
             from: self.courier.to_account_info(),
             to: self.fee_collector.to_account_info(),

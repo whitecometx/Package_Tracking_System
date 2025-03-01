@@ -8,4 +8,8 @@ use anchor_lang::error_code;
         InvalidStatusTransition,
         #[msg("Geolocation out of bounds")]
         InvalidGeoPoint,
+        #[msg("Invalid Fee Collector")]
+        InvalidFeeCollector,
+        #[msg("Insufficient funds for fee")]
+        InsufficientFunds,
     }

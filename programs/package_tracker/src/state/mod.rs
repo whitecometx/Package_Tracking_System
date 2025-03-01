@@ -6,3 +6,5 @@ pub mod geopoint;
 pub use geopoint::*;
 pub mod events;
 pub use events::*;
+pub mod global_config;
+pub use global_config::*;

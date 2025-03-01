@@ -42,7 +42,6 @@ pub struct CreatePackage<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 impl<'info> CreatePackage<'info> {
     pub fn create_package(&mut self, package_id: String, encrypted_recipient_data: Vec<u8>, latitude: f64, longitude: f64, bumps: &CreatePackageBumps ) -> Result<()> {
         // Check sender balance before transferring

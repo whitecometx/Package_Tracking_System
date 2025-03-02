@@ -4,7 +4,7 @@ A decentralized package tracking system built on Solana using Anchor. This progr
 
 ## Features
 
-- **Package Lifecycle Management**: Create packages with encrypted recipient data and track status transitions (Created, Dispatched, InTransit, etc.).
+- **Package Lifecycle Management**: Create packages with encrypted recipient data and track      status transitions (Created, Dispatched, InTransit, etc.).
 - **Fee Mechanism**: 
   - Senders pay creation fees
   - Couriers pay update fees

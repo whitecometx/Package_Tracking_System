@@ -101,7 +101,7 @@ describe("package_tracker", () => {
       feeCollector: globalConfig.feeCollector,
       globalConfig: globalConfigPDA,
       package: packagePDA,
-      systemProgram: SystemProgram.programId
+      systemProgram: anchor.web3.SystemProgram.programId
     })
     .signers([sender])
     .rpc();
@@ -254,7 +254,7 @@ describe("package_tracker", () => {
       [
         Buffer.from("package"),
         Buffer.from(packageId),
-        courier.publicKey.toBuffer() // Use real courier's key
+        courier.publicKey.toBuffer() 
       ],
       program.programId
     );
@@ -303,7 +303,7 @@ describe("package_tracker", () => {
         courier: courier.publicKey,
         admin: admin.publicKey,
         package: packagePDA,
-        feeCollector: feeCollector.publicKey, // Invalid collector
+        feeCollector: feeCollector.publicKey,
         globalConfig: globalConfigPDA,
         systemProgram: SystemProgram.programId,
       })
@@ -355,7 +355,7 @@ describe("package_tracker", () => {
         [
           Buffer.from("package"),
           Buffer.from(packageId),
-          courier.publicKey.toBuffer() // Use real courier's key
+          courier.publicKey.toBuffer() 
         ],
         program.programId
       );
@@ -369,7 +369,7 @@ describe("package_tracker", () => {
         courier: courier.publicKey,
         admin: admin.publicKey,
         package: packagePDA,
-        feeCollector: feeCollector.publicKey, // Invalid collector
+        feeCollector: feeCollector.publicKey,
         globalConfig: globalConfigPDA,
         systemProgram: SystemProgram.programId,
       })

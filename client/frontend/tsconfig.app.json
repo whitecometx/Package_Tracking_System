@@ -38,5 +38,6 @@
     "src/**/*.js",
     "src/**/*.jsx",
     "src/idl/*.json" 
+, "../../app/src/components/TrackingPage.tsx"  
   ],
 }

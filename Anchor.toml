@@ -8,11 +8,14 @@ skip-lint = false
 [programs.localnet]
 package_tracker = "6MvygZ6LsuRpgLFBb4Qmrdnh19aD1UsyceGXynwU9hp9"
 
+[programs.devnet]
+package_tracker = "6MvygZ6LsuRpgLFBb4Qmrdnh19aD1UsyceGXynwU9hp9"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

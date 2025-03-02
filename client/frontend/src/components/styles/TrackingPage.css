@@ -1,0 +1,138 @@
+.tracking-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .tracking-id {
+    color: #666;
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+  }
+  
+  .status-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .current-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .status-badge {
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+  }
+  
+  .status-time {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .detail-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #eee;
+  }
+  
+  .detail-card h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+  }
+  
+  .recipient-details {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .recipient-details li {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
+  
+  .encrypted-warning {
+    color: #666;
+    font-style: italic;
+    padding: 1rem;
+    background: #fff3cd;
+    border-radius: 4px;
+  }
+  
+  .location-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .timeline {
+    border-left: 2px solid #eee;
+    padding-left: 1rem;
+  }
+  
+  .timeline-event {
+    margin-bottom: 1rem;
+    padding-left: 1rem;
+  }
+  
+  .timeline-date {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  .timeline-content {
+    color: #666;
+    margin-top: 0.25rem;
+  }
+  
+  .share-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+  }
+  
+  .share-link {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    word-break: break-all;
+    margin-top: 1rem;
+  }
+  
+  .loader {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+  }
+  
+  .error-message {
+    color: #e74c3c;
+    padding: 2rem;
+    background: #fadbd8;
+    border-radius: 4px;
+    text-align: center;
+  }

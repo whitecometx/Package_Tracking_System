@@ -2,21 +2,23 @@
 import { SolTrackProgram, PackageData } from '../types/program_types'; 
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { derivePackageAddress } from '../utils/pda';
+//import { PackageTracker } from '@/idl';
+
 
 export const fetchPackage = async (
   program: SolTrackProgram,
   pda: PublicKey
-): Promise<PackageData> => {
+  ): Promise<PackageData> => {
   try {
-  const account = await (program.account as any).Package.fetch(pda);
-  return account;
+    const account = await (program.account as any).Package.fetch(pda)
+    return account as PackageData;
 
-  } catch (error) {
+    } catch (error) {
 
-  console.error("Error fetching package:", error);
-  throw error; // Re-throw to allow error handling in the UI
+    console.error("Error fetching package:", error);
+    throw error; // Re-throw to allow error handling in the UI
 
-  }
+    }
 };
 
 export const createPackage = async (

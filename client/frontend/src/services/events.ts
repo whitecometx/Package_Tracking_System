@@ -1,6 +1,6 @@
-import { Connection, PublicKey } from '@solana/web3.js';
-import { EventParser, Program, Event } from '@coral-xyz/anchor';
-import { CONFIG } from '../config';
+//import { Connection, PublicKey } from '@solana/web3.js';
+import { EventParser, Event } from '@coral-xyz/anchor';
+//import { CONFIG } from '../config';
 import { SolTrackProgram } from '@/types/program_types';
 
 

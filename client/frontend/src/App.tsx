@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+//import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
@@ -8,17 +8,19 @@ import { clusterApiUrl, Connection } from '@solana/web3.js';
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 
 import CreatePackageForm from './components/CreatePackageForm';
-import TrackingPage from './components/TrackingPage';
-import CourierDashboard from './components/CourierDashboard';
+//import TrackingPage from './components/TrackingPage';
+//import CourierDashboard from './components/CourierDashboard';
 import './App';
 import { CONFIG } from './config'; // Ensure this is correctly configured
-import { PackageTracker } from './types/package_tracker';
+//import { PackageTracker } from './types/package_tracker';
 import idl from './idl/package_tracker.json';
 import { useEffect, useState } from 'react';
 import { SolTrackProgram } from './types/program_types';
+import { PackageTracker } from '@/idl';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 function App() {
-  const network = 'localhost';
+  const network = WalletAdapterNetwork.Devnet;
   const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
   const [program, setProgram] = useState<SolTrackProgram | null>(null);
   const endpoint = CONFIG.RPC_URL || clusterApiUrl(network);
@@ -35,16 +37,17 @@ function App() {
           const provider = new AnchorProvider(
             connection,
             window.solana,
-            'confirmed'
+            { commitment: 'confirmed' } 
           );
           
           // Type assertion for IDL
 
           const program = new Program<PackageTracker>(
             idl as PackageTracker,
-            CONFIG.PROGRAM_ID,
+            //CONFIG.PROGRAM_ID,
             provider
           ) as SolTrackProgram;
+          
 
           setProgram(program);
         } catch (error) {
@@ -68,8 +71,7 @@ function App() {
     return (
       <Routes>
         <Route path="/" element={<CreatePackageForm program={program} />} />
-        <Route path="/track/:pda" element={<TrackingPage program={program} />} />
-        <Route path="/courier" element={<CourierDashboard program={program} />} />
+        
       </Routes>
     );
   };

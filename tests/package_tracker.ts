@@ -25,7 +25,7 @@ describe("package_tracker", () => {
 
   it("airdrop", async () => {
 
-    const airdropAmount = anchor.web3.LAMPORTS_PER_SOL * 10;
+    const airdropAmount = anchor.web3.LAMPORTS_PER_SOL * 2;
     const airdropAmountPoor = anchor.web3.LAMPORTS_PER_SOL * 0.001;
     
     const confirmAirdrop = async (pubkey: anchor.web3.PublicKey, airdropAmount: number) => {
